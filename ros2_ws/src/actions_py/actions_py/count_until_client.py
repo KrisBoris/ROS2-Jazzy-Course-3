@@ -29,6 +29,13 @@ class CountUntilClientNode(Node):
         self.count_until_client. \
             send_goal_async(goal, feedback_callback=self.goal_feedback_callback). \
                 add_done_callback(self.goal_response_callback)
+        self.timer = self.create_timer(3.0, self.cancel_goal)
+
+
+    def cancel_goal(self):
+        self.get_logger().info("Canceling the goal")
+        self.goal_handle.cancel_goal_async()
+        self.timer.cancel()
 
 
     def goal_response_callback(self, future):
@@ -49,6 +56,8 @@ class CountUntilClientNode(Node):
             self.get_logger().info("Mission accomplished")
         elif status == GoalStatus.STATUS_ABORTED:
             self.get_logger().info("Mission aborted")
+        elif status == GoalStatus.STATUS_CANCELED:
+            self.get_logger().info("Mission canceledf")
         self.get_logger().info("Result: " + str(result.reached_number))
 
 
