@@ -42,9 +42,9 @@ class CountUntilServerNode(Node):
             counter += 1
             self.get_logger().info(str(counter))
             time.sleep(period)
-
-        # Info for ROS
-        goal_handle.succeed()
+        
+        # goal_handle.succeed()
+        goal_handle.abort()
 
         result = CountUntil.Result()
         result.reached_number = counter
