@@ -29,7 +29,7 @@ class CountUntilClientNode(Node):
         self.count_until_client. \
             send_goal_async(goal, feedback_callback=self.goal_feedback_callback). \
                 add_done_callback(self.goal_response_callback)
-        self.timer = self.create_timer(3.0, self.cancel_goal)
+        # self.timer = self.create_timer(3.0, self.cancel_goal)
 
 
     def cancel_goal(self):
@@ -70,7 +70,7 @@ class CountUntilClientNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = CountUntilClientNode()
-    node.send_goal(5, 1.0)
+    node.send_goal(5, 1.0)    
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
