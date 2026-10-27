@@ -36,10 +36,15 @@ class CountUntilServerNode(Node):
     def execute_callback(self, goal_handle: ServerGoalHandle):
         target_number = goal_handle.request.target_number
         period = goal_handle.request.period
+        feedback = CountUntil.Feedback()
+
+        self.get_logger().info("Executing the goal")
 
         counter = 0
         for i in range(target_number):
             counter += 1
+            feedback.current_number = counter
+            goal_handle.publish_feedback(feedback)
             self.get_logger().info(str(counter))
             time.sleep(period)
         
