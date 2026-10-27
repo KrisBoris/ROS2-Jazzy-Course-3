@@ -6,7 +6,7 @@ from rclpy.node import Node
 class NodeTemplate(Node):
     
     def __init__(self):
-        super.__init__("node_name")
+        super().__init__("node_name")
 
 
 
