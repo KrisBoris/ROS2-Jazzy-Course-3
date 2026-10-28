@@ -1,3 +1,4 @@
+#include <queue>
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "my_robot_interfaces/action/count_until.hpp"
@@ -11,6 +12,7 @@ class CountUntilServerNode : public rclcpp::Node
 public:
     CountUntilServerNode(): rclcpp::Node("count_until_server_node") 
     {
+        goal_queue_thread = std::thread(&CountUntilServerNode::run_goal_queue_thread, this);
         cb_group = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
         count_until_server = rclcpp_action::create_server<CountUntil>(
             this,
@@ -24,12 +26,19 @@ public:
         RCLCPP_INFO(this->get_logger(), "Action server has been created");
     }
 
+    ~CountUntilServerNode()
+    {
+        goal_queue_thread.join();
+    }
+
 private:
     rclcpp_action::Server<CountUntil>::SharedPtr count_until_server;
     std::shared_ptr<CountUntilGoalHandle> goal_handle;
     rclcpp_action::GoalUUID preemted_goal_id;
+    std::queue<std::shared_ptr<CountUntilGoalHandle>> goal_queue;
     rclcpp::CallbackGroup::SharedPtr cb_group;
     std::mutex mutex;
+    std::thread goal_queue_thread;
 
     rclcpp_action::GoalResponse goal_callback(
         const rclcpp_action::GoalUUID &uuid,
@@ -55,15 +64,15 @@ private:
         }
 
         // Preempt the existing goal when receiving a new valid goal
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            if(goal_handle) {
-                if(goal_handle->is_active()) {
-                    RCLCPP_INFO(this->get_logger(), "Abort current goal and accept new goal");
-                    preemted_goal_id = goal_handle->get_goal_id();
-                }
-            }
-        }
+        // {
+        //     std::lock_guard<std::mutex> lock(mutex);
+        //     if(goal_handle) {
+        //         if(goal_handle->is_active()) {
+        //             RCLCPP_INFO(this->get_logger(), "Abort current goal and accept new goal");
+        //             preemted_goal_id = goal_handle->get_goal_id();
+        //         }
+        //     }
+        // }
 
         RCLCPP_INFO(this->get_logger(), "Executing the goal");
         return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -79,7 +88,32 @@ private:
     void handle_accepted_callback(
         const std::shared_ptr<CountUntilGoalHandle> goal_handle)
     {
-        execute_goal(goal_handle);
+        std::lock_guard<std::mutex> lock(mutex);
+        goal_queue.push(goal_handle);        
+        RCLCPP_INFO(this->get_logger(), "Adding new goal to the queue");
+        RCLCPP_INFO(this->get_logger(), "Queue size: %d", (int)goal_queue.size());
+    }
+
+    void run_goal_queue_thread()
+    {
+        rclcpp::Rate loop_rate(1000.0);
+        while(rclcpp::ok()) {
+            std::shared_ptr<CountUntilGoalHandle> next_goal;
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                if(goal_queue.size() > 0) {
+                    next_goal = goal_queue.front();
+                    goal_queue.pop();
+                }
+            }
+
+            if(next_goal) {
+                RCLCPP_INFO(this->get_logger(), "Executing next goal from the queue");
+                execute_goal(next_goal);
+            }
+
+            loop_rate.sleep();
+        }
     }
 
     void execute_goal(std::shared_ptr<CountUntilGoalHandle> goal_handle)
