@@ -13,7 +13,7 @@ public:
     {
         count_until_server = rclcpp_action::create_server<CountUntil>(
             this,
-            "count_until_server",
+            "count_until",
             std::bind(&CountUntilServerNode::goal_callback, this, _1, _2),
             std::bind(&CountUntilServerNode::cancel_callback, this, _1),
             std::bind(&CountUntilServerNode::handle_accepted_callback, this, _1)
