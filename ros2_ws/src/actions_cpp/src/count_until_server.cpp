@@ -11,18 +11,22 @@ class CountUntilServerNode : public rclcpp::Node
 public:
     CountUntilServerNode(): rclcpp::Node("count_until_server_node") 
     {
+        cb_group = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
         count_until_server = rclcpp_action::create_server<CountUntil>(
             this,
             "count_until",
             std::bind(&CountUntilServerNode::goal_callback, this, _1, _2),
             std::bind(&CountUntilServerNode::cancel_callback, this, _1),
-            std::bind(&CountUntilServerNode::handle_accepted_callback, this, _1)
+            std::bind(&CountUntilServerNode::handle_accepted_callback, this, _1),
+            rcl_action_server_get_default_options(),
+            cb_group
         );
         RCLCPP_INFO(this->get_logger(), "Action server has been created");
     }
 
 private:
     rclcpp_action::Server<CountUntil>::SharedPtr count_until_server;
+    rclcpp::CallbackGroup::SharedPtr cb_group;
 
     rclcpp_action::GoalResponse goal_callback(
         const rclcpp_action::GoalUUID &uuid,
@@ -57,18 +61,23 @@ private:
         int target_number = goal_handle->get_goal()->target_number;
         double period = goal_handle->get_goal()->period;
         auto feedback = std::make_shared<CountUntil::Feedback>();
+        auto result = std::make_shared<CountUntil::Result>();
 
         int counter = 0;
         rclcpp::Rate loop_rate(1.0 / period);
         for(int i = 0; i < target_number; ++i) {
+            if(goal_handle->is_canceling()) {
+                result->reached_number = counter;
+                goal_handle->canceled(result);
+                return;
+            }
             ++counter;
             feedback->current_number = counter;
             goal_handle->publish_feedback(feedback);
             RCLCPP_INFO(this->get_logger(), "Current number: %d", counter);
             loop_rate.sleep();
         }
-
-        auto result = std::make_shared<CountUntil::Result>();
+        
         result->reached_number = counter;
         goal_handle->succeed(result);
     }
@@ -79,7 +88,10 @@ int main(int argc, char** argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<CountUntilServerNode>();
-    rclcpp::spin(node);
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(node);
+    executor.spin();
+    // rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
 }
