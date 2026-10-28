@@ -34,9 +34,9 @@ public:
         count_until_client->async_send_goal(goal, options);
         RCLCPP_INFO(this->get_logger(), "Sending goal");
 
-        timer = this->create_wall_timer(
-            std::chrono::seconds(2),
-            std::bind(&CountUntilClientNode::timer_callback, this));
+        // timer = this->create_wall_timer(
+        //     std::chrono::seconds(2),
+        //     std::bind(&CountUntilClientNode::timer_callback, this));
     }
 
 private:
