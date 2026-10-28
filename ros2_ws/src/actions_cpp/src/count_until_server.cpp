@@ -30,7 +30,7 @@ private:
     {
         (void)uuid;        
         RCLCPP_INFO(this->get_logger(), "Received a goal");
-        
+
         if(goal->target_number <= 0) {
             RCLCPP_INFO(this->get_logger(), "Rejecting the goal");
             return rclcpp_action::GoalResponse::REJECT;
@@ -56,11 +56,14 @@ private:
     {
         int target_number = goal_handle->get_goal()->target_number;
         double period = goal_handle->get_goal()->period;
+        auto feedback = std::make_shared<CountUntil::Feedback>();
 
         int counter = 0;
         rclcpp::Rate loop_rate(1.0 / period);
         for(int i = 0; i < target_number; ++i) {
             ++counter;
+            feedback->current_number = counter;
+            goal_handle->publish_feedback(feedback);
             RCLCPP_INFO(this->get_logger(), "Current number: %d", counter);
             loop_rate.sleep();
         }
