@@ -28,6 +28,7 @@ setup(
             f"count_until_action_client = {package_name}.count_until_client:main",
             f"move_robot_action_server = {package_name}.move_robot_server:main",
             f"move_robot_action_client = {package_name}.move_robot_client:main",
+            f"move_robot_cancel_node = {package_name}.move_robot_cancel_node:main",
         ],
     },
 )

@@ -4,7 +4,10 @@ import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle, GoalStatus
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import ReentrantCallbackGroup
 from my_robot_interfaces.action import MoveRobot
+from std_msgs.msg import Bool
 
 
 class MoveRobotActionClient(Node):
@@ -13,7 +16,15 @@ class MoveRobotActionClient(Node):
         self.move_robot_client = ActionClient(
             self,
             MoveRobot,
-            "move_robot",
+            "move_robot",  
+            callback_group=ReentrantCallbackGroup(),
+        )
+        self.cancel_goal_sub = self.create_subscription(
+            Bool,
+            "cancel_robot_move",
+            self.cancel_goal_callback, 
+            10,
+            callback_group=ReentrantCallbackGroup(),
         )
         self.get_logger().info("move_robot action client node has been started")
 
@@ -63,13 +74,18 @@ class MoveRobotActionClient(Node):
         self.goal_handle.cancel_goal_async()
 
 
+    def cancel_goal_callback(self, msg: Bool):
+        if msg.data:
+            self.cancel_goal()
+
+
 
 def main(args=None):
     rclpy.init(args=args)
     node = MoveRobotActionClient()
-    node.send_goal(66, 5)
+    node.send_goal(66, 3)
     try:
-        rclpy.spin(node)
+        rclpy.spin(node, MultiThreadedExecutor())
     except KeyboardInterrupt:
         pass
     finally:
