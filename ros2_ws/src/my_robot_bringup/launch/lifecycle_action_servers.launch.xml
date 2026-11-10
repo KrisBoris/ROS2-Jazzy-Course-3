@@ -1,0 +1,21 @@
+<launch>
+    <let name="action_server_node_name_1" value="move_robot_server_node_1"/>
+    <let name="action_server_node_name_2" value="move_robot_server_node_2"/>
+    <let name="action_server_node_name_3" value="move_robot_server_node_3"/>
+
+    <let name="action_server_name_1" value="move_robot_r2d2"/>
+    <let name="action_server_name_2" value="move_robot_walle"/>
+    <let name="action_server_name_3" value="move_robot_omnidroid"/>
+
+    <node pkg="lifecycle_action_server_py" exec="lifecycle_move_robot_server" name="$(var action_server_node_name_1)">
+        <param name="action_server_name" value="$(var action_server_name_1)"/>
+    </node>
+
+    <node pkg="lifecycle_action_server_py" exec="lifecycle_move_robot_server" name="$(var action_server_node_name_2)">
+        <param name="action_server_name" value="$(var action_server_name_2)"/>
+    </node>
+
+    <node pkg="lifecycle_action_server_py" exec="lifecycle_move_robot_server" name="$(var action_server_node_name_3)">
+        <param name="action_server_name" value="$(var action_server_name_3)"/>
+    </node>
+</launch>
