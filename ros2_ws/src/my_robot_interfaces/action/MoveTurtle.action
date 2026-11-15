@@ -1,0 +1,10 @@
+# Goal
+float32 linear_vel_x
+float32 angular_vel_z
+float32 duration
+---
+# Result
+bool success
+---
+# Feedback
+float32 remaining_duration
